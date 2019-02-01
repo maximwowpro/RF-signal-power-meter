@@ -156,13 +156,13 @@ class GR_fm_radio_receiver_with_fft_gui (gr.top_block, Qt.QWidget):
 			self.qt_gui_fft_sink.set_plot_pos_half(not True)
 
 		labels = ['', '', '', '', '',
-		          '', '', '', '', '']
+				  '', '', '', '', '']
 		widths = [1, 1, 1, 1, 1,
-		          1, 1, 1, 1, 1]
+				  1, 1, 1, 1, 1]
 		colors = ["blue", "red", "green", "black", "cyan",
-		          "magenta", "yellow", "dark red", "dark green", "dark blue"]
+				  "magenta", "yellow", "dark red", "dark green", "dark blue"]
 		alphas = [1.0, 1.0, 1.0, 1.0, 1.0,
-		          1.0, 1.0, 1.0, 1.0, 1.0]
+				  1.0, 1.0, 1.0, 1.0, 1.0]
 
 		for i in xrange(1): #todo cancel loop
 			if len(labels[i]) == 0:
