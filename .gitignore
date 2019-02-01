@@ -105,3 +105,6 @@ venv.bak/
 
 # KDE Dolphin service file
 .directory
+
+# GNU Radio service folder
+.idea/
