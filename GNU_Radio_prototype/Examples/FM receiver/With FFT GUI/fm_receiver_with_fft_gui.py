@@ -7,16 +7,34 @@
 # Kyiv, Ukraine.
 # 01.02.2019
 
-import sys, getopt, sip
+# import sys, getopt
+# import sip
+# from PyQt4 import Qt
+# from gnuradio import qtgui
+# from gnuradio import analog
+# from gnuradio import audio
+# from gnuradio import blocks
+# from gnuradio import filter
+# from gnuradio import gr
+# from gnuradio.filter import firdes
+# from gnuradio.eng_option import eng_option
+# from gnuradio import eng_notation
+# from optparse import OptionParser
+# import osmosdr
+# from gnuradio import qtgui
+
+
+import sys, getopt
 from PyQt4 import Qt
-from gnuradio import qtgui
 from gnuradio import analog
 from gnuradio import audio
 from gnuradio import blocks
 from gnuradio import filter
 from gnuradio import gr
 from gnuradio.filter import firdes
+import sip
 import osmosdr
+from gnuradio import qtgui
 
 DEFAULT_SDR_SRC_HARDWARE_FREQ = 100e6
 DEFAULT_HETERODYNE_FREQ = 0.5e6
@@ -25,8 +43,7 @@ DEFAULT_LOW_PASS_FILTER_CUTOFF_FREQ = 70e3
 DEFAULT_LOW_PASS_FILTER_TRANS_WIDTH = 20e3
 DEFAULT_OUTPUT_SIGNAL_GAIN = 0.6
 
-class GR_fm_radio_receiver_with_fft_gui (gr.top_block, Qt.QWidget):
-
+class GR_fm_radio_receiver_with_fft_gui (gr.top_block):     #, Qt.QWidget): todo
 	def __init__(self, target_freq, samp_rate = DEFAULT_SAMPLE_RATE,
 				 low_pass_filter_cutoff_freq = DEFAULT_LOW_PASS_FILTER_CUTOFF_FREQ,
 				 low_pass_filter_trans_width = DEFAULT_LOW_PASS_FILTER_TRANS_WIDTH,
@@ -35,15 +52,15 @@ class GR_fm_radio_receiver_with_fft_gui (gr.top_block, Qt.QWidget):
 
 		# Init QT GUI
 		self.qt_fft_gui = Qt.QWidget()
-		#self.qt_fft_gui.__init__(self)
-		super(GR_fm_radio_receiver_with_fft_gui, self).__init__()
+									#self.qt_fft_gui.__init__(self) todo
+									#super(GR_fm_radio_receiver_with_fft_gui, self).__init__()
 		self.qt_fft_gui.setWindowTitle("FM receiver with FFT GUI")
 		qtgui.util.check_set_qss()
 		try:
 			self.qt_fft_gui.setWindowIcon(Qt.QIcon.fromTheme("gnuradio-grc"))
 		except:
 			pass
-		# TODO: refactor this code, this is auto-generated govniche
+
 		self.qt_fft_gui.top_scroll_layout = Qt.QVBoxLayout()
 		self.qt_fft_gui.setLayout(self.qt_fft_gui.top_scroll_layout)
 		self.qt_fft_gui.top_scroll = Qt.QScrollArea()
@@ -133,49 +150,60 @@ class GR_fm_radio_receiver_with_fft_gui (gr.top_block, Qt.QWidget):
 		self.IF_mixer = blocks.multiply_vcc(1)
 
 		self.qt_gui_fft_sink = qtgui.freq_sink_c(
-			1024,  # FFT array size
-			firdes.WIN_BLACKMAN_hARRIS,  # wintype
-			self.center_sdr_hardware_freq - self.heterodyne_freq,  # FFT center freqency
-			self.samp_rate,  # FFT bandwidth
-			"FM receiver intermediate frequency",  # Title of FFT sink
-			1  # number of inputs
+			1024,                                                   # FFT array size
+			firdes.WIN_BLACKMAN_hARRIS,                             # wintype
+			self.center_sdr_hardware_freq - self.heterodyne_freq,   # FFT center freqency
+			self.samp_rate,                                         # FFT bandwidth
+			"FM receiver spectre",                                  # Title of FFT sink
+			1                                                       # number of inputs
 		)
 		self.qt_gui_fft_sink.set_update_time(0.10)
 		self.qt_gui_fft_sink.set_y_axis(-140, 10)
 		self.qt_gui_fft_sink.set_y_label('Relative Gain', 'dB')
 		self.qt_gui_fft_sink.set_trigger_mode(qtgui.TRIG_MODE_FREE, 0.0, 0, "")
 		self.qt_gui_fft_sink.enable_autoscale(False)
-		self.qt_gui_fft_sink.enable_grid(False)
+		self.qt_gui_fft_sink.enable_grid(True)
 		self.qt_gui_fft_sink.set_fft_average(0.1)
 		self.qt_gui_fft_sink.enable_axis_labels(True)
 		self.qt_gui_fft_sink.enable_control_panel(True)
 
-		self.qt_gui_fft_sink.disable_legend() #todo: cancel this line
+		# #if "complex" == "float" or "complex" == "msg_float": # todo refactor
+		# self.qt_gui_fft_sink.set_plot_pos_half(True)
+		# #	print ("\nqwe\nqwe\nqwe\n")
 
-		if "complex" == "float" or "complex" == "msg_float": # todo refactor
-			self.qt_gui_fft_sink.set_plot_pos_half(not True)
+		# labels = ['', '', '', '', '',
+		# 		  '', '', '', '', '']
+		# widths = [5, 1, 1, 1, 1,
+		# 		  1, 1, 1, 1, 1]
+		# colors = ["dark red", "red", "green", "black", "cyan",
+		# 		  "magenta", "yellow", "dark red", "dark green", "dark blue"]
+		# alphas = [1.0, 1.0, 1.0, 1.0, 1.0,
+		# 		  1.0, 1.0, 1.0, 1.0, 1.0]
 
-		labels = ['', '', '', '', '',
-				  '', '', '', '', '']
-		widths = [1, 1, 1, 1, 1,
-				  1, 1, 1, 1, 1]
-		colors = ["blue", "red", "green", "black", "cyan",
-				  "magenta", "yellow", "dark red", "dark green", "dark blue"]
-		alphas = [1.0, 1.0, 1.0, 1.0, 1.0,
-				  1.0, 1.0, 1.0, 1.0, 1.0]
+		# Configure settings of the FFT graph line
+		self.line_label = 'Signal\npower at\ndifferent\nfrequencies'
+		self.line_width = 2
+		self.line_color = "dark red"
+		self.line_transparrency = 1.0
 
-		for i in xrange(1): #todo cancel loop
-			if len(labels[i]) == 0:
-				self.qt_gui_fft_sink.set_line_label(i, "Data {0}".format(i))
-			else:
-				self.qt_gui_fft_sink.set_line_label(i, labels[i])
-			self.qt_gui_fft_sink.set_line_width(i, widths[i])
-			self.qt_gui_fft_sink.set_line_color(i, colors[i])
-			self.qt_gui_fft_sink.set_line_alpha(i, alphas[i])
+		self.qt_gui_fft_sink.set_line_label(0, self.line_label)
+		self.qt_gui_fft_sink.set_line_width(0, self.line_width)
+		self.qt_gui_fft_sink.set_line_color(0, self.line_color)
+		self.qt_gui_fft_sink.set_line_alpha(0, self.line_transparrency)
+
+		# for i in xrange(1): #todo cancel loop
+		# 	if len(labels[i]) == 0:
+		# 		self.qt_gui_fft_sink.set_line_label(i, "Data {0}".format(i))
+		# 	else:
+		# 		self.qt_gui_fft_sink.set_line_label(i, labels[i])
+		# 	self.qt_gui_fft_sink.set_line_width(i, widths[i])
+		# 	self.qt_gui_fft_sink.set_line_color(i, colors[i])
+		# 	self.qt_gui_fft_sink.set_line_alpha(i, alphas[i])
 
 		# todo understand and refactor this shit
 		self._qt_gui_fft_sink_win = sip.wrapinstance(self.qt_gui_fft_sink.pyqwidget(), Qt.QWidget)
 		self.top_grid_layout.addWidget(self._qt_gui_fft_sink_win)
+
 
 		##################################################
 		# Connections
@@ -207,10 +235,10 @@ class GR_fm_radio_receiver_with_fft_gui (gr.top_block, Qt.QWidget):
 
 
 def main (argv):
-	from distutils.version import StrictVersion #todo check without this
-	if StrictVersion(Qt.qVersion()) >= StrictVersion("4.5.0"):
-		style = gr.prefs().get_string('qtgui', 'style', 'raster')
-		Qt.QApplication.setGraphicsSystem(style)
+	# from distutils.version import StrictVersion #todo check without this
+	# if StrictVersion(Qt.qVersion()) >= StrictVersion("4.5.0"):
+	# 	style = gr.prefs().get_string('qtgui', 'style', 'raster')
+	# 	Qt.QApplication.setGraphicsSystem(style)
 	qapp = Qt.QApplication(sys.argv)
 
 	target_freq = 0
