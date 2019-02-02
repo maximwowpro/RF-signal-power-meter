@@ -30,32 +30,35 @@ class GR_fm_radio_receiver_with_fft_gui (gr.top_block):
 	def __init__(self, target_freq, samp_rate = DEFAULT_SAMPLE_RATE,
 				 low_pass_filter_cutoff_freq = DEFAULT_LOW_PASS_FILTER_CUTOFF_FREQ,
 				 low_pass_filter_trans_width = DEFAULT_LOW_PASS_FILTER_TRANS_WIDTH,
-				 volume = DEFAULT_OUTPUT_SIGNAL_GAIN):
+				 volume = DEFAULT_OUTPUT_SIGNAL_GAIN,
+	             gui_mode = 0):
 		gr.top_block.__init__(self, "FM receiver with FFT GUI")
 
-		# Init QT GUI
-		self.qt_fft_gui = Qt.QWidget()
-		self.qt_fft_gui.setWindowTitle("FM receiver with FFT GUI")
-		qtgui.util.check_set_qss()
-		try:
-			self.qt_fft_gui.setWindowIcon(Qt.QIcon.fromTheme("gnuradio-grc"))
-		except:
-			pass
+		if (1 == gui_mode):
+			print ("wceawceawc\nawceawceawe\necaweawcdca\n")
+			# Init QT GUI
+			self.qt_fft_gui = Qt.QWidget()
+			self.qt_fft_gui.setWindowTitle("FM receiver with FFT GUI")
+			qtgui.util.check_set_qss()
+			try:
+				self.qt_fft_gui.setWindowIcon(Qt.QIcon.fromTheme("gnuradio-grc"))
+			except:
+				pass
 
-		self.qt_fft_gui.top_scroll_layout = Qt.QVBoxLayout()
-		self.qt_fft_gui.setLayout(self.qt_fft_gui.top_scroll_layout)
-		self.qt_fft_gui.top_scroll = Qt.QScrollArea()
-		self.qt_fft_gui.top_scroll.setFrameStyle(Qt.QFrame.NoFrame)
-		self.qt_fft_gui.top_scroll_layout.addWidget(self.qt_fft_gui.top_scroll)
-		self.qt_fft_gui.top_scroll.setWidgetResizable(True)
-		self.qt_fft_gui.top_widget = Qt.QWidget()
-		self.qt_fft_gui.top_scroll.setWidget(self.qt_fft_gui.top_widget)
-		self.qt_fft_gui.top_layout = Qt.QVBoxLayout(self.qt_fft_gui.top_widget)
-		self.top_grid_layout = Qt.QGridLayout()
-		self.qt_fft_gui.top_layout.addLayout(self.top_grid_layout)
+			self.qt_fft_gui.top_scroll_layout = Qt.QVBoxLayout()
+			self.qt_fft_gui.setLayout(self.qt_fft_gui.top_scroll_layout)
+			self.qt_fft_gui.top_scroll = Qt.QScrollArea()
+			self.qt_fft_gui.top_scroll.setFrameStyle(Qt.QFrame.NoFrame)
+			self.qt_fft_gui.top_scroll_layout.addWidget(self.qt_fft_gui.top_scroll)
+			self.qt_fft_gui.top_scroll.setWidgetResizable(True)
+			self.qt_fft_gui.top_widget = Qt.QWidget()
+			self.qt_fft_gui.top_scroll.setWidget(self.qt_fft_gui.top_widget)
+			self.qt_fft_gui.top_layout = Qt.QVBoxLayout(self.qt_fft_gui.top_widget)
+			self.top_grid_layout = Qt.QGridLayout()
+			self.qt_fft_gui.top_layout.addLayout(self.top_grid_layout)
 
-		self.qt_fft_gui.settings = Qt.QSettings("GNU Radio", "fm_receiver_with_fft_gui")
-		self.qt_fft_gui.restoreGeometry(self.qt_fft_gui.settings.value("geometry").toByteArray())
+			self.qt_fft_gui.settings = Qt.QSettings("GNU Radio", "fm_receiver_with_fft_gui")
+			self.qt_fft_gui.restoreGeometry(self.qt_fft_gui.settings.value("geometry").toByteArray())
 
 		##################################################
 		# Variables
@@ -130,55 +133,56 @@ class GR_fm_radio_receiver_with_fft_gui (gr.top_block):
 														firdes.WIN_HAMMING, 6.76))
 		self.IF_mixer = blocks.multiply_vcc(1)
 
-		self.qt_gui_fft_sink = qtgui.freq_sink_c(
-			1024,                                                   # FFT array size
-			firdes.WIN_BLACKMAN_hARRIS,                             # wintype
-			self.center_sdr_hardware_freq - self.heterodyne_freq,   # FFT center freqency
-			self.samp_rate,                                         # FFT bandwidth
-			"FM receiver spectre",                                  # Title of FFT sink
-			1                                                       # number of inputs
-		)
-		self.qt_gui_fft_sink.set_update_time(0.10)
-		self.qt_gui_fft_sink.set_y_axis(-140, 10)
-		self.qt_gui_fft_sink.set_y_label('Relative Gain', 'dB')
-		self.qt_gui_fft_sink.set_trigger_mode(qtgui.TRIG_MODE_FREE, 0.0, 0, "")
-		self.qt_gui_fft_sink.enable_autoscale(False)
-		self.qt_gui_fft_sink.enable_grid(True)
-		self.qt_gui_fft_sink.set_fft_average(0.1)
-		self.qt_gui_fft_sink.enable_axis_labels(True)
-		self.qt_gui_fft_sink.enable_control_panel(True)
+		if (1 == gui_mode):
+			self.qt_gui_fft_sink = qtgui.freq_sink_c(
+				1024,                                                   # FFT array size
+				firdes.WIN_BLACKMAN_hARRIS,                             # wintype
+				self.center_sdr_hardware_freq - self.heterodyne_freq,   # FFT center freqency
+				self.samp_rate,                                         # FFT bandwidth
+				"FM receiver spectre",                                  # Title of FFT sink
+				1                                                       # number of inputs
+			)
+			self.qt_gui_fft_sink.set_update_time(0.10)
+			self.qt_gui_fft_sink.set_y_axis(-140, 10)
+			self.qt_gui_fft_sink.set_y_label('Relative Gain', 'dB')
+			self.qt_gui_fft_sink.set_trigger_mode(qtgui.TRIG_MODE_FREE, 0.0, 0, "")
+			self.qt_gui_fft_sink.enable_autoscale(False)
+			self.qt_gui_fft_sink.enable_grid(True)
+			self.qt_gui_fft_sink.set_fft_average(0.1)
+			self.qt_gui_fft_sink.enable_axis_labels(True)
+			self.qt_gui_fft_sink.enable_control_panel(True)
 
-		# Configure settings of the FFT graph line
-		self.line_label = 'Signal\npower at\ndifferent\nfrequencies'
-		self.line_width = 2
-		self.line_color = "blue"
-		self.line_transparrency = 1.0
+			# Configure settings of the FFT graph line
+			self.line_label = 'Signal\npower at\ndifferent\nfrequencies'
+			self.line_width = 2
+			self.line_color = "blue"
+			self.line_transparrency = 1.0
+			self.qt_gui_fft_sink.set_line_label(0, self.line_label)
+			self.qt_gui_fft_sink.set_line_width(0, self.line_width)
+			self.qt_gui_fft_sink.set_line_color(0, self.line_color)
+			self.qt_gui_fft_sink.set_line_alpha(0, self.line_transparrency)
 
-		self.qt_gui_fft_sink.set_line_label(0, self.line_label)
-		self.qt_gui_fft_sink.set_line_width(0, self.line_width)
-		self.qt_gui_fft_sink.set_line_color(0, self.line_color)
-		self.qt_gui_fft_sink.set_line_alpha(0, self.line_transparrency)
-
-		# todo understand and refactor this shit
-		self._qt_gui_fft_sink_win = sip.wrapinstance(self.qt_gui_fft_sink.pyqwidget(), Qt.QWidget)
-		self.top_grid_layout.addWidget(self._qt_gui_fft_sink_win)
+			self._qt_gui_fft_sink_win = sip.wrapinstance(self.qt_gui_fft_sink.pyqwidget(), Qt.QWidget)
+			self.top_grid_layout.addWidget(self._qt_gui_fft_sink_win)
 
 
 		##################################################
 		# Connections
 		##################################################
 		self.connect((self.IF_mixer, 0), (self.low_pass_filter, 0))
-		self.connect((self.IF_mixer, 0), (self.qt_gui_fft_sink, 0))
+		if (1 == gui_mode):
+			self.connect((self.IF_mixer, 0), (self.qt_gui_fft_sink, 0))
 		self.connect((self.low_pass_filter, 0), (self.wbfm_receive, 0))
 		self.connect((self.multiply_output_volume, 0), (self.output_audio_final, 0))
 		self.connect((self.src_hackrf, 0), (self.IF_mixer, 1))
 		self.connect((self.src_heterodyne, 0), (self.IF_mixer, 0))
 		self.connect((self.wbfm_receive, 0), (self.multiply_output_volume, 0))
 
-	def closeEvent (self, event):
-		self.qt_gui_fft_sink.settings = Qt.QSettings("GNU Radio", "fm_receiver_with_fft_gui")
-		self.qt_gui_fft_sink.settings.setValue("geometry", self.qt_gui_fft_sink.saveGeometry())
-		event.accept()
+		if (1 == gui_mode):
+			def closeEvent (self, event):
+				self.qt_gui_fft_sink.settings = Qt.QSettings("GNU Radio", "fm_receiver_with_fft_gui")
+				self.qt_gui_fft_sink.settings.setValue("geometry", self.qt_gui_fft_sink.saveGeometry())
+				event.accept()
 
 	def calculate_frequencies(self, target_freq):
 		self.wbfm_freq = self.samp_rate / 10
@@ -201,12 +205,13 @@ def main (argv):
 	low_pass_filter_cutoff_freq = 0
 	low_pass_filter_trans_width = 0
 	volume = 0
+	gui_mode = 0
 
-	usage_str = "Usage: <script_name>.py -f <target Frequency> -s <Sample rate>(optional) -c <low pass filter Cutoff frequency>(optional) -t <low pass filter Trans width>(opyional) -v <audio volume>(optional)\n"
+	usage_str = "Usage: <script_name>.py -f <target Frequency> -s <Sample rate>(optional) -c <low pass filter Cutoff frequency>(optional) -t <low pass filter Trans width>(opyional) -v <audio volume>(optional) -g <Disable / Enable GUI: 0 or 1>(optional)\n"
 	if (0 == len(argv)):
 		print (usage_str)
 	try:
-		opts, args = getopt.getopt(argv,":h:f:s:c:t:v:",["targetfreq=", "samplerate=", "lowpasscutoff=", "lowpasstranswidth=", "volume="])
+		opts, args = getopt.getopt(argv,":h:f:s:c:t:v:g:",["targetfreq=", "samplerate=", "lowpasscutoff=", "lowpasstranswidth=", "volume=", "guimode="])
 	except getopt.GetoptError:
 		print (usage_str)
 		sys.exit(2)
@@ -224,6 +229,8 @@ def main (argv):
 			low_pass_filter_trans_width = arg
 		elif opt in ("-v", "--volume"):
 			volume = arg
+		elif opt in ("-g", "--guimode"):
+			gui_mode = arg
 
 	if (0 == target_freq):
 		target_freq = DEFAULT_SDR_SRC_HARDWARE_FREQ + DEFAULT_HETERODYNE_FREQ
@@ -233,16 +240,25 @@ def main (argv):
 	fm_receiver = GR_fm_radio_receiver_with_fft_gui (float(target_freq), float(samp_rate),
 										float(low_pass_filter_cutoff_freq),
 										float(low_pass_filter_trans_width),
-										float(volume))
+										float(volume),
+	                                    int(gui_mode))
 	fm_receiver.start()
-	fm_receiver.qt_fft_gui.show()
+	if ("1" == gui_mode):
+		fm_receiver.qt_fft_gui.show()
 
-	def stop_program ():
+		def stop_program ():
+			fm_receiver.stop()
+			fm_receiver.wait()
+
+		qapp.connect(qapp, Qt.SIGNAL("aboutToQuit()"), stop_program)
+		qapp.exec_()
+	else:
+		try:
+			raw_input('Press Enter to quit: ')
+		except EOFError:
+			pass
 		fm_receiver.stop()
 		fm_receiver.wait()
-
-	qapp.connect(qapp, Qt.SIGNAL("aboutToQuit()"), stop_program)
-	qapp.exec_()
 
 
 if __name__ == '__main__':
