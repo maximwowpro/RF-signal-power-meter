@@ -15,6 +15,8 @@ from gnuradio import filter
 from gnuradio import gr
 from gnuradio.filter import firdes
 import osmosdr
+from threading import Thread, Event, Lock
+import time
 
 DEFAULT_SDR_SRC_HARDWARE_FREQ = 100e6
 DEFAULT_HETERODYNE_FREQ = 0.5e6
@@ -23,6 +25,24 @@ DEFAULT_LOW_PASS_FILTER_CUTOFF_FREQ = 70e3
 DEFAULT_LOW_PASS_FILTER_TRANS_WIDTH = 20e3
 DEFAULT_OUTPUT_SIGNAL_GAIN = 0.6
 
+
+class WorkerThread(Thread):
+	def __init__(self, periodMiliseconds, taskFunction):
+		super(WorkerThread, self).__init__()
+		self.periodMiliseconds = periodMiliseconds
+		self.taskFunction = taskFunction
+		self.stopRequest = Event()
+
+	def run(self):
+		while not self.stopRequest.isSet():
+			self.taskFunction()
+			time.sleep(self.periodMiliseconds)
+
+	def join(self, timeout = None):
+		self.stopRequest.set()
+		super(WorkerThread, self).join(timeout)
+
+
 class GR_fm_radio_receiver_without_gui(gr.top_block):
 
 	def __init__(self, target_freq, samp_rate = DEFAULT_SAMPLE_RATE,
@@ -30,7 +50,7 @@ class GR_fm_radio_receiver_without_gui(gr.top_block):
 				 low_pass_filter_trans_width = DEFAULT_LOW_PASS_FILTER_TRANS_WIDTH,
 				 volume = DEFAULT_OUTPUT_SIGNAL_GAIN):
 		gr.top_block.__init__(self, "FM receiver without GUI")
-
+		self.counter = 0
 		##################################################
 		# Variables
 		##################################################
@@ -78,6 +98,8 @@ class GR_fm_radio_receiver_without_gui(gr.top_block):
 		self.wbfm_receive = analog.wfm_rcv(quad_rate=self.wbfm_freq,
 										   audio_decimation=int(self.wbfm_freq / self.audio_freq),)
 
+		self.vector_sink_if = blocks.vector_sink_c(1, 1024)
+
 		self.src_heterodyne = analog.sig_source_c(self.samp_rate, analog.GR_COS_WAVE, self.heterodyne_freq, 1, 0)
 
 		self.src_hackrf = osmosdr.source( args="numchan=" + str(1) + " " + '' )
@@ -108,11 +130,22 @@ class GR_fm_radio_receiver_without_gui(gr.top_block):
 		# Connections
 		##################################################
 		self.connect((self.IF_mixer, 0), (self.low_pass_filter, 0))
+		self.connect((self.IF_mixer, 0), (self.vector_sink_if, 0))
 		self.connect((self.low_pass_filter, 0), (self.wbfm_receive, 0))
 		self.connect((self.multiply_output_volume, 0), (self.output_audio_final, 0))
 		self.connect((self.src_hackrf, 0), (self.IF_mixer, 1))
 		self.connect((self.src_heterodyne, 0), (self.IF_mixer, 0))
 		self.connect((self.wbfm_receive, 0), (self.multiply_output_volume, 0))
+
+	def return_vector_if(self):
+		arr = self.vector_sink_if.data()
+		if self.counter == 5:
+			print arr
+		self.counter += 1
+		# print len(arr)
+		# for i in range (0, len(arr), 1):
+		# 	print i# ("%.3f"%(arr[i].real) + " ; " + "%.3f"%(arr[i].imag))
+		# print ("\n")
 
 	def calculate_frequencies(self, target_freq):
 		self.wbfm_freq = self.samp_rate / 10
@@ -165,7 +198,11 @@ def main (argv):
 	                                    float(low_pass_filter_cutoff_freq),
 	                                    float(low_pass_filter_trans_width),
 	                                    float(volume))
+
+	interrogate_thread = WorkerThread(1, fm_receiver.return_vector_if)
 	fm_receiver.start()
+	interrogate_thread.start()
+
 	try:
 		raw_input('Press Enter to quit: ')
 	except EOFError:
