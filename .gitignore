@@ -108,3 +108,6 @@ venv.bak/
 
 # GNU Radio service folder
 .idea/
+
+# Matlab compiled file
+*.m~
