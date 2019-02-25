@@ -90,10 +90,14 @@
     </param>
   </block>
   <block>
-    <key>variable</key>
+    <key>variable_qtgui_range</key>
     <param>
       <key>comment</key>
       <value></value>
+    </param>
+    <param>
+      <key>value</key>
+      <value>100e6</value>
     </param>
     <param>
       <key>_enabled</key>
@@ -101,7 +105,11 @@
     </param>
     <param>
       <key>_coordinate</key>
-      <value>(7, 195)</value>
+      <value>(7, 275)</value>
+    </param>
+    <param>
+      <key>gui_hint</key>
+      <value></value>
     </param>
     <param>
       <key>_rotation</key>
@@ -112,8 +120,36 @@
       <value>center_sdr_hardware_freq</value>
     </param>
     <param>
-      <key>value</key>
-      <value>100e6</value>
+      <key>label</key>
+      <value></value>
+    </param>
+    <param>
+      <key>min_len</key>
+      <value>200</value>
+    </param>
+    <param>
+      <key>orient</key>
+      <value>Qt.Horizontal</value>
+    </param>
+    <param>
+      <key>start</key>
+      <value>80e6</value>
+    </param>
+    <param>
+      <key>step</key>
+      <value>10e3</value>
+    </param>
+    <param>
+      <key>stop</key>
+      <value>500e6</value>
+    </param>
+    <param>
+      <key>rangeType</key>
+      <value>float</value>
+    </param>
+    <param>
+      <key>widget</key>
+      <value>counter_slider</value>
     </param>
   </block>
   <block>
@@ -128,7 +164,7 @@
     </param>
     <param>
       <key>_coordinate</key>
-      <value>(7, 267)</value>
+      <value>(7, 203)</value>
     </param>
     <param>
       <key>_rotation</key>
@@ -249,7 +285,7 @@
     </param>
     <param>
       <key>_enabled</key>
-      <value>0</value>
+      <value>1</value>
     </param>
     <param>
       <key>type</key>
@@ -316,7 +352,7 @@
     </param>
     <param>
       <key>_enabled</key>
-      <value>0</value>
+      <value>1</value>
     </param>
     <param>
       <key>_coordinate</key>
@@ -367,7 +403,7 @@
     </param>
     <param>
       <key>_enabled</key>
-      <value>0</value>
+      <value>1</value>
     </param>
     <param>
       <key>_coordinate</key>
@@ -426,7 +462,7 @@
     </param>
     <param>
       <key>ctrlpanel</key>
-      <value>False</value>
+      <value>True</value>
     </param>
     <param>
       <key>affinity</key>
@@ -721,7 +757,7 @@
     </param>
     <param>
       <key>freq0</key>
-      <value>100*1e6</value>
+      <value>center_sdr_hardware_freq</value>
     </param>
     <param>
       <key>gain_mode0</key>
@@ -1031,7 +1067,7 @@
     </param>
     <param>
       <key>_enabled</key>
-      <value>0</value>
+      <value>1</value>
     </param>
     <param>
       <key>_coordinate</key>

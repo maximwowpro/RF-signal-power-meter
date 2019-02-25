@@ -3,7 +3,7 @@
 ##################################################
 # GNU Radio Python Flow Graph
 # Title: Fm Receiver With Fft Gui Grc
-# Generated: Wed Feb  6 22:27:00 2019
+# Generated: Fri Feb 22 10:53:24 2019
 ##################################################
 
 if __name__ == '__main__':
@@ -18,12 +18,15 @@ if __name__ == '__main__':
 
 from PyQt4 import Qt
 from gnuradio import analog
+from gnuradio import audio
 from gnuradio import blocks
 from gnuradio import eng_notation
+from gnuradio import filter
 from gnuradio import gr
 from gnuradio import qtgui
 from gnuradio.eng_option import eng_option
 from gnuradio.filter import firdes
+from gnuradio.qtgui import Range, RangeWidget
 from optparse import OptionParser
 import osmosdr
 import sip
@@ -68,10 +71,17 @@ class fm_receiver_with_fft_gui_grc(gr.top_block, Qt.QWidget):
         ##################################################
         # Blocks
         ##################################################
+        self._center_sdr_hardware_freq_range = Range(80e6, 500e6, 10e3, 100e6, 200)
+        self._center_sdr_hardware_freq_win = RangeWidget(self._center_sdr_hardware_freq_range, self.set_center_sdr_hardware_freq, "center_sdr_hardware_freq", "counter_slider", float)
+        self.top_grid_layout.addWidget(self._center_sdr_hardware_freq_win)
+        self.wbfm_receive = analog.wfm_rcv(
+        	quad_rate=480e3,
+        	audio_decimation=10,
+        )
         self.src_heterodyne = analog.sig_source_c(samp_rate, analog.GR_COS_WAVE, heterodyne_freq, 1, 0)
         self.src_hackrf = osmosdr.source( args="numchan=" + str(1) + " " + '' )
         self.src_hackrf.set_sample_rate(samp_rate)
-        self.src_hackrf.set_center_freq(100*1e6, 0)
+        self.src_hackrf.set_center_freq(center_sdr_hardware_freq, 0)
         self.src_hackrf.set_freq_corr(0, 0)
         self.src_hackrf.set_dc_offset_mode(0, 0)
         self.src_hackrf.set_iq_balance_mode(0, 0)
@@ -98,7 +108,7 @@ class fm_receiver_with_fft_gui_grc(gr.top_block, Qt.QWidget):
         self.qtgui_freq_sink_x_0.enable_grid(False)
         self.qtgui_freq_sink_x_0.set_fft_average(0.1)
         self.qtgui_freq_sink_x_0.enable_axis_labels(True)
-        self.qtgui_freq_sink_x_0.enable_control_panel(False)
+        self.qtgui_freq_sink_x_0.enable_control_panel(True)
 
         if not True:
           self.qtgui_freq_sink_x_0.disable_legend()
@@ -125,6 +135,10 @@ class fm_receiver_with_fft_gui_grc(gr.top_block, Qt.QWidget):
 
         self._qtgui_freq_sink_x_0_win = sip.wrapinstance(self.qtgui_freq_sink_x_0.pyqwidget(), Qt.QWidget)
         self.top_grid_layout.addWidget(self._qtgui_freq_sink_x_0_win)
+        self.output_audio_final = audio.sink(48000, '', True)
+        self.multiply_output_volume = blocks.multiply_const_vff((0.6, ))
+        self.low_pass_filter = filter.fir_filter_ccf(10, firdes.low_pass(
+        	1, samp_rate, 70000, 20000, firdes.WIN_HAMMING, 6.76))
         self.IF_mixer = blocks.multiply_vcc(1)
 
 
@@ -132,9 +146,13 @@ class fm_receiver_with_fft_gui_grc(gr.top_block, Qt.QWidget):
         ##################################################
         # Connections
         ##################################################
+        self.connect((self.IF_mixer, 0), (self.low_pass_filter, 0))
         self.connect((self.IF_mixer, 0), (self.qtgui_freq_sink_x_0, 0))
+        self.connect((self.low_pass_filter, 0), (self.wbfm_receive, 0))
+        self.connect((self.multiply_output_volume, 0), (self.output_audio_final, 0))
         self.connect((self.src_hackrf, 0), (self.IF_mixer, 1))
         self.connect((self.src_heterodyne, 0), (self.IF_mixer, 0))
+        self.connect((self.wbfm_receive, 0), (self.multiply_output_volume, 0))
 
     def closeEvent(self, event):
         self.settings = Qt.QSettings("GNU Radio", "fm_receiver_with_fft_gui_grc")
@@ -149,6 +167,7 @@ class fm_receiver_with_fft_gui_grc(gr.top_block, Qt.QWidget):
         self.src_heterodyne.set_sampling_freq(self.samp_rate)
         self.src_hackrf.set_sample_rate(self.samp_rate)
         self.qtgui_freq_sink_x_0.set_frequency_range(self.center_sdr_hardware_freq - self.heterodyne_freq, self.samp_rate)
+        self.low_pass_filter.set_taps(firdes.low_pass(1, self.samp_rate, 70000, 20000, firdes.WIN_HAMMING, 6.76))
 
     def get_heterodyne_freq(self):
         return self.heterodyne_freq
@@ -163,6 +182,7 @@ class fm_receiver_with_fft_gui_grc(gr.top_block, Qt.QWidget):
 
     def set_center_sdr_hardware_freq(self, center_sdr_hardware_freq):
         self.center_sdr_hardware_freq = center_sdr_hardware_freq
+        self.src_hackrf.set_center_freq(self.center_sdr_hardware_freq, 0)
         self.qtgui_freq_sink_x_0.set_frequency_range(self.center_sdr_hardware_freq - self.heterodyne_freq, self.samp_rate)
 
 
