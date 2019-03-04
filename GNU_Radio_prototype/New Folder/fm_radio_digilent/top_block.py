@@ -3,7 +3,7 @@
 ##################################################
 # GNU Radio Python Flow Graph
 # Title: Top Block
-# Generated: Thu Jan 31 21:07:48 2019
+# Generated: Sun Mar  3 01:17:14 2019
 ##################################################
 
 if __name__ == '__main__':
@@ -18,16 +18,17 @@ if __name__ == '__main__':
 
 from PyQt4 import Qt
 from gnuradio import analog
-from gnuradio import audio
 from gnuradio import blocks
 from gnuradio import eng_notation
 from gnuradio import filter
 from gnuradio import gr
+from gnuradio import qtgui
 from gnuradio.eng_option import eng_option
 from gnuradio.filter import firdes
 from gnuradio.qtgui import Range, RangeWidget
 from optparse import OptionParser
 import osmosdr
+import sip
 import sys
 from gnuradio import qtgui
 
@@ -66,7 +67,7 @@ class top_block(gr.top_block, Qt.QWidget):
         self.low_pass_filter_cutoff_freq = low_pass_filter_cutoff_freq = 70e3
         self.heterodyne_freq_slider = heterodyne_freq_slider = -1.10e6
         self.hackrf_freq_slider = hackrf_freq_slider = center_sdr_hardware_freq
-        self.samp_rate = samp_rate = 4.8e6
+        self.samp_rate = samp_rate = 2e6
         self.output_final_volume_slider = output_final_volume_slider = 0.6
         self.low_pass_trans_width_slider = low_pass_trans_width_slider = 20e3
         self.low_pass_filter_cutoff_freq_slider = low_pass_filter_cutoff_freq_slider = low_pass_filter_cutoff_freq
@@ -75,9 +76,6 @@ class top_block(gr.top_block, Qt.QWidget):
         ##################################################
         # Blocks
         ##################################################
-        self._output_final_volume_slider_range = Range(0.2, 3, 0.2, 0.6, 200)
-        self._output_final_volume_slider_win = RangeWidget(self._output_final_volume_slider_range, self.set_output_final_volume_slider, 'Volume', "counter_slider", float)
-        self.top_grid_layout.addWidget(self._output_final_volume_slider_win)
         self._low_pass_trans_width_slider_range = Range(5e3, 50e3, 5e3, 20e3, 200)
         self._low_pass_trans_width_slider_win = RangeWidget(self._low_pass_trans_width_slider_range, self.set_low_pass_trans_width_slider, 'Filter trans width fr', "counter_slider", float)
         self.top_grid_layout.addWidget(self._low_pass_trans_width_slider_win)
@@ -87,26 +85,109 @@ class top_block(gr.top_block, Qt.QWidget):
         self._hackrf_freq_slider_range = Range(center_sdr_hardware_freq - 1e6, center_sdr_hardware_freq + 1e6, 50e3, center_sdr_hardware_freq, 200)
         self._hackrf_freq_slider_win = RangeWidget(self._hackrf_freq_slider_range, self.set_hackrf_freq_slider, 'SDR frequency', "counter_slider", float)
         self.top_grid_layout.addWidget(self._hackrf_freq_slider_win)
-        self.wbfm_receive = analog.wfm_rcv(
-        	quad_rate=480e3,
-        	audio_decimation=10,
-        )
         self.src_heterodyne = analog.sig_source_c(samp_rate, analog.GR_COS_WAVE, heterodyne_freq_slider, 1, 0)
-        self.src_hackrf = osmosdr.source( args="numchan=" + str(1) + " " + '' )
-        self.src_hackrf.set_sample_rate(samp_rate)
-        self.src_hackrf.set_center_freq(hackrf_freq_slider, 0)
-        self.src_hackrf.set_freq_corr(0, 0)
-        self.src_hackrf.set_dc_offset_mode(0, 0)
-        self.src_hackrf.set_iq_balance_mode(0, 0)
-        self.src_hackrf.set_gain_mode(False, 0)
-        self.src_hackrf.set_gain(10, 0)
-        self.src_hackrf.set_if_gain(20, 0)
-        self.src_hackrf.set_bb_gain(30, 0)
-        self.src_hackrf.set_antenna('', 0)
-        self.src_hackrf.set_bandwidth(0, 0)
+        self.rtlsdr_source_0 = osmosdr.source( args="numchan=" + str(1) + " " + '' )
+        self.rtlsdr_source_0.set_sample_rate(samp_rate)
+        self.rtlsdr_source_0.set_center_freq(center_sdr_hardware_freq, 0)
+        self.rtlsdr_source_0.set_freq_corr(0, 0)
+        self.rtlsdr_source_0.set_dc_offset_mode(0, 0)
+        self.rtlsdr_source_0.set_iq_balance_mode(0, 0)
+        self.rtlsdr_source_0.set_gain_mode(False, 0)
+        self.rtlsdr_source_0.set_gain(10, 0)
+        self.rtlsdr_source_0.set_if_gain(20, 0)
+        self.rtlsdr_source_0.set_bb_gain(20, 0)
+        self.rtlsdr_source_0.set_antenna('', 0)
+        self.rtlsdr_source_0.set_bandwidth(0, 0)
 
-        self.output_audio_final = audio.sink(48000, '', True)
-        self.multiply_output_volume = blocks.multiply_const_vff((output_final_volume_slider, ))
+        self.qtgui_freq_sink_hackrf = qtgui.freq_sink_c(
+        	1024, #size
+        	firdes.WIN_RECTANGULAR, #wintype
+        	hackrf_freq_slider, #fc
+        	2*1e6, #bw
+        	"FFT before filter", #name
+        	1 #number of inputs
+        )
+        self.qtgui_freq_sink_hackrf.set_update_time(0.10)
+        self.qtgui_freq_sink_hackrf.set_y_axis(-140, 10)
+        self.qtgui_freq_sink_hackrf.set_y_label('Relative Gain', 'dB')
+        self.qtgui_freq_sink_hackrf.set_trigger_mode(qtgui.TRIG_MODE_FREE, 0.0, 0, "")
+        self.qtgui_freq_sink_hackrf.enable_autoscale(False)
+        self.qtgui_freq_sink_hackrf.enable_grid(False)
+        self.qtgui_freq_sink_hackrf.set_fft_average(0.2)
+        self.qtgui_freq_sink_hackrf.enable_axis_labels(True)
+        self.qtgui_freq_sink_hackrf.enable_control_panel(True)
+
+        if not True:
+          self.qtgui_freq_sink_hackrf.disable_legend()
+
+        if "complex" == "float" or "complex" == "msg_float":
+          self.qtgui_freq_sink_hackrf.set_plot_pos_half(not True)
+
+        labels = ['', '', '', '', '',
+                  '', '', '', '', '']
+        widths = [1, 1, 1, 1, 1,
+                  1, 1, 1, 1, 1]
+        colors = ["blue", "red", "green", "black", "cyan",
+                  "magenta", "yellow", "dark red", "dark green", "dark blue"]
+        alphas = [1.0, 1.0, 1.0, 1.0, 1.0,
+                  1.0, 1.0, 1.0, 1.0, 1.0]
+        for i in xrange(1):
+            if len(labels[i]) == 0:
+                self.qtgui_freq_sink_hackrf.set_line_label(i, "Data {0}".format(i))
+            else:
+                self.qtgui_freq_sink_hackrf.set_line_label(i, labels[i])
+            self.qtgui_freq_sink_hackrf.set_line_width(i, widths[i])
+            self.qtgui_freq_sink_hackrf.set_line_color(i, colors[i])
+            self.qtgui_freq_sink_hackrf.set_line_alpha(i, alphas[i])
+
+        self._qtgui_freq_sink_hackrf_win = sip.wrapinstance(self.qtgui_freq_sink_hackrf.pyqwidget(), Qt.QWidget)
+        self.top_grid_layout.addWidget(self._qtgui_freq_sink_hackrf_win)
+        self.qtgui_freq_sink_after_low_pass = qtgui.freq_sink_c(
+        	1024, #size
+        	firdes.WIN_RECTANGULAR, #wintype
+        	hackrf_freq_slider - heterodyne_freq_slider, #fc
+        	48*1e4, #bw
+        	"FFT after filter", #name
+        	1 #number of inputs
+        )
+        self.qtgui_freq_sink_after_low_pass.set_update_time(0.10)
+        self.qtgui_freq_sink_after_low_pass.set_y_axis(-140, 10)
+        self.qtgui_freq_sink_after_low_pass.set_y_label('Relative Gain', 'dB')
+        self.qtgui_freq_sink_after_low_pass.set_trigger_mode(qtgui.TRIG_MODE_FREE, 0.0, 0, "")
+        self.qtgui_freq_sink_after_low_pass.enable_autoscale(False)
+        self.qtgui_freq_sink_after_low_pass.enable_grid(False)
+        self.qtgui_freq_sink_after_low_pass.set_fft_average(0.2)
+        self.qtgui_freq_sink_after_low_pass.enable_axis_labels(True)
+        self.qtgui_freq_sink_after_low_pass.enable_control_panel(True)
+
+        if not True:
+          self.qtgui_freq_sink_after_low_pass.disable_legend()
+
+        if "complex" == "float" or "complex" == "msg_float":
+          self.qtgui_freq_sink_after_low_pass.set_plot_pos_half(not True)
+
+        labels = ['', '', '', '', '',
+                  '', '', '', '', '']
+        widths = [1, 1, 1, 1, 1,
+                  1, 1, 1, 1, 1]
+        colors = ["blue", "red", "green", "black", "cyan",
+                  "magenta", "yellow", "dark red", "dark green", "dark blue"]
+        alphas = [1.0, 1.0, 1.0, 1.0, 1.0,
+                  1.0, 1.0, 1.0, 1.0, 1.0]
+        for i in xrange(1):
+            if len(labels[i]) == 0:
+                self.qtgui_freq_sink_after_low_pass.set_line_label(i, "Data {0}".format(i))
+            else:
+                self.qtgui_freq_sink_after_low_pass.set_line_label(i, labels[i])
+            self.qtgui_freq_sink_after_low_pass.set_line_width(i, widths[i])
+            self.qtgui_freq_sink_after_low_pass.set_line_color(i, colors[i])
+            self.qtgui_freq_sink_after_low_pass.set_line_alpha(i, alphas[i])
+
+        self._qtgui_freq_sink_after_low_pass_win = sip.wrapinstance(self.qtgui_freq_sink_after_low_pass.pyqwidget(), Qt.QWidget)
+        self.top_grid_layout.addWidget(self._qtgui_freq_sink_after_low_pass_win)
+        self._output_final_volume_slider_range = Range(0.2, 3, 0.2, 0.6, 200)
+        self._output_final_volume_slider_win = RangeWidget(self._output_final_volume_slider_range, self.set_output_final_volume_slider, 'Volume', "counter_slider", float)
+        self.top_grid_layout.addWidget(self._output_final_volume_slider_win)
         self._low_pass_filter_cutoff_freq_slider_range = Range(low_pass_filter_cutoff_freq - 40e3, low_pass_filter_cutoff_freq + 40e3, 5e3, low_pass_filter_cutoff_freq, 200)
         self._low_pass_filter_cutoff_freq_slider_win = RangeWidget(self._low_pass_filter_cutoff_freq_slider_range, self.set_low_pass_filter_cutoff_freq_slider, 'Filter cutoff freq', "counter_slider", float)
         self.top_grid_layout.addWidget(self._low_pass_filter_cutoff_freq_slider_win)
@@ -131,11 +212,10 @@ class top_block(gr.top_block, Qt.QWidget):
         # Connections
         ##################################################
         self.connect((self.IF_mixer, 0), (self.low_pass_filter, 0))
-        self.connect((self.low_pass_filter, 0), (self.wbfm_receive, 0))
-        self.connect((self.multiply_output_volume, 0), (self.output_audio_final, 0))
-        self.connect((self.src_hackrf, 0), (self.IF_mixer, 1))
+        self.connect((self.low_pass_filter, 0), (self.qtgui_freq_sink_after_low_pass, 0))
+        self.connect((self.rtlsdr_source_0, 0), (self.IF_mixer, 1))
+        self.connect((self.rtlsdr_source_0, 0), (self.qtgui_freq_sink_hackrf, 0))
         self.connect((self.src_heterodyne, 0), (self.IF_mixer, 0))
-        self.connect((self.wbfm_receive, 0), (self.multiply_output_volume, 0))
 
     def closeEvent(self, event):
         self.settings = Qt.QSettings("GNU Radio", "top_block")
@@ -148,6 +228,7 @@ class top_block(gr.top_block, Qt.QWidget):
     def set_center_sdr_hardware_freq(self, center_sdr_hardware_freq):
         self.center_sdr_hardware_freq = center_sdr_hardware_freq
         self.set_hackrf_freq_slider(self.center_sdr_hardware_freq)
+        self.rtlsdr_source_0.set_center_freq(self.center_sdr_hardware_freq, 0)
 
     def get_low_pass_filter_cutoff_freq(self):
         return self.low_pass_filter_cutoff_freq
@@ -162,6 +243,7 @@ class top_block(gr.top_block, Qt.QWidget):
     def set_heterodyne_freq_slider(self, heterodyne_freq_slider):
         self.heterodyne_freq_slider = heterodyne_freq_slider
         self.src_heterodyne.set_frequency(self.heterodyne_freq_slider)
+        self.qtgui_freq_sink_after_low_pass.set_frequency_range(self.hackrf_freq_slider - self.heterodyne_freq_slider, 48*1e4)
         self.set_curr_if_freq_label(self._curr_if_freq_label_formatter(self.hackrf_freq_slider - self.heterodyne_freq_slider))
 
     def get_hackrf_freq_slider(self):
@@ -169,7 +251,8 @@ class top_block(gr.top_block, Qt.QWidget):
 
     def set_hackrf_freq_slider(self, hackrf_freq_slider):
         self.hackrf_freq_slider = hackrf_freq_slider
-        self.src_hackrf.set_center_freq(self.hackrf_freq_slider, 0)
+        self.qtgui_freq_sink_hackrf.set_frequency_range(self.hackrf_freq_slider, 2*1e6)
+        self.qtgui_freq_sink_after_low_pass.set_frequency_range(self.hackrf_freq_slider - self.heterodyne_freq_slider, 48*1e4)
         self.set_curr_if_freq_label(self._curr_if_freq_label_formatter(self.hackrf_freq_slider - self.heterodyne_freq_slider))
 
     def get_samp_rate(self):
@@ -178,7 +261,7 @@ class top_block(gr.top_block, Qt.QWidget):
     def set_samp_rate(self, samp_rate):
         self.samp_rate = samp_rate
         self.src_heterodyne.set_sampling_freq(self.samp_rate)
-        self.src_hackrf.set_sample_rate(self.samp_rate)
+        self.rtlsdr_source_0.set_sample_rate(self.samp_rate)
         self.low_pass_filter.set_taps(firdes.low_pass(1, self.samp_rate, self.low_pass_filter_cutoff_freq_slider, self.low_pass_trans_width_slider, firdes.WIN_HAMMING, 6.76))
 
     def get_output_final_volume_slider(self):
@@ -186,7 +269,6 @@ class top_block(gr.top_block, Qt.QWidget):
 
     def set_output_final_volume_slider(self, output_final_volume_slider):
         self.output_final_volume_slider = output_final_volume_slider
-        self.multiply_output_volume.set_k((self.output_final_volume_slider, ))
 
     def get_low_pass_trans_width_slider(self):
         return self.low_pass_trans_width_slider

@@ -4,7 +4,7 @@
 %   Kyiv, Ukraine.
 %   25.02.2019
 
-function [target_vector] = select_target_band_of_array (fft_vector, center_freq, sample_rate, target_freq_begin, target_freq_end)
+function [target_vector, x_freq_axis] = select_target_band_of_array (fft_vector, center_freq, sample_rate, target_freq_begin, target_freq_end)
 
 	% This function returns a "target vector", what is a part of FFT samples vector.
 	% For example, your input is FFT samples vector with center freqency = 1 MHz, sample rate = 200 kHz and FFT size = 4096.
@@ -27,5 +27,6 @@ function [target_vector] = select_target_band_of_array (fft_vector, center_freq,
 	begin_index = floor((target_freq_begin - fft_freq_begin) / one_sample_freq_band);
 	last_index  = floor((target_freq_end   - fft_freq_begin) / one_sample_freq_band);
 	
-	target_vector = fft_vector(begin_index : last_index);	
+	x_freq_axis = target_freq_begin : one_sample_freq_band : target_freq_end;
+	target_vector = fft_vector(begin_index : last_index);
 end
